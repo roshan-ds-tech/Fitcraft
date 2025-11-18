@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const CURRENT_USER_KEY = 'fitcraftCurrentUser';
+
 const LoginScreen: React.FC = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
@@ -8,6 +10,9 @@ const LoginScreen: React.FC = () => {
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
+        if (email) {
+            localStorage.setItem(CURRENT_USER_KEY, email.toLowerCase());
+        }
         navigate('/app/feed');
     };
 

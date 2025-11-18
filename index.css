@@ -354,6 +354,13 @@ html {
   margin-bottom: 24px;
 }
 
+.input-container .input-icon {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
+  z-index: 10;
+}
+
 .input-floating {
   width: 100%;
   padding: 20px 16px 12px 48px;
@@ -374,9 +381,10 @@ html {
 }
 
 .input-floating:focus + .input-label,
-.input-floating:not(:placeholder-shown) + .input-label {
-  transform: translateY(-8px) scale(0.85);
-  color: #F97316;
+.input-floating:not(:placeholder-shown) + .input-label,
+.input-floating.has-value + .input-label {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .input-label {
@@ -399,10 +407,18 @@ html {
   color: rgba(255, 255, 255, 0.5);
   transition: color 0.3s;
   pointer-events: none;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
+  z-index: 10;
 }
 
-.input-floating:focus ~ .input-icon {
+.input-floating:focus ~ .input-icon,
+.input-floating.has-value ~ .input-icon {
   color: #F97316;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
 }
 
 /* Outlined Input Style */

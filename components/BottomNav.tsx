@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom';
 const BottomNav: React.FC = () => {
     const navItems = [
         { path: 'feed', icon: 'home', label: 'Home' },
-        { path: 'stats', icon: 'bar_chart', label: 'Stats' },
+        { path: 'messages', icon: 'forum', label: 'Messages' },
         { path: 'nutrition', icon: 'restaurant_menu', label: 'Nutrition' },
         { path: 'profile', icon: 'account_circle', label: 'Profile' },
     ];

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const LogWorkoutModal = ({ isOpen, onClose, onLog }: any) => {
     if (!isOpen) return null;
@@ -6,11 +6,11 @@ const LogWorkoutModal = ({ isOpen, onClose, onLog }: any) => {
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onLog();
-    }
+    };
 
     return (
         <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-md flex justify-center items-center z-50 p-4 animate-fade-in"
+            className="fixed inset-0 bg-black/70 backdrop-blur-md flex justify-center items-center z-[70] p-4 animate-fade-in"
             onClick={onClose}
             role="dialog"
             aria-modal="true"
@@ -100,6 +100,149 @@ const LogWorkoutModal = ({ isOpen, onClose, onLog }: any) => {
     );
 };
 
+const CreatePostModal = ({ isOpen, onClose, onCreate }: any) => {
+    const [caption, setCaption] = useState('');
+    const [hashtags, setHashtags] = useState('');
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setCaption('');
+            setHashtags('');
+            setImagePreview(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) {
+            setImagePreview(null);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+                setImagePreview(reader.result);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!imagePreview || !caption.trim()) {
+            alert('Please add an image and caption to post.');
+            return;
+        }
+
+        const formattedHashtags = hashtags
+            .split(/[\s,]+/)
+            .filter(Boolean)
+            .map(tag => (tag.startsWith('#') ? tag : `#${tag}`));
+
+        onCreate({
+            caption: caption.trim(),
+            hashtags: formattedHashtags,
+            image: imagePreview,
+        });
+    };
+
+    return (
+        <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-md flex justify-center items-center z-[60] p-4 animate-fade-in"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-post-title"
+        >
+            <div
+                className="card-elevated p-6 w-full max-w-sm animate-scale-in"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="flex justify-between items-center mb-6">
+                    <h2 id="create-post-title" className="text-title text-white">Create Post</h2>
+                    <button 
+                        onClick={onClose} 
+                        className="text-gray-400 hover:text-white hover:bg-white/10 rounded-full p-2 transition-all duration-200" 
+                        aria-label="Close"
+                    >
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="space-y-3">
+                        <label htmlFor="postImage" className="block text-caption mb-1 text-gray-300">Upload Photo</label>
+                        <div
+                            className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
+                                imagePreview ? 'border-orange-400 bg-white/5' : 'border-white/20 hover:border-orange-400/60'
+                            }`}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            {imagePreview ? (
+                                <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-xl" />
+                            ) : (
+                                <div className="flex flex-col items-center gap-2 text-gray-400">
+                                    <span className="material-symbols-outlined text-4xl">add_photo_alternate</span>
+                                    <p className="text-sm">Tap to upload a workout snapshot</p>
+                                </div>
+                            )}
+                        </div>
+                        <input
+                            ref={fileInputRef}
+                            id="postImage"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleImageChange}
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="caption" className="block text-caption mb-2 text-gray-300">Caption</label>
+                        <textarea 
+                            id="caption" 
+                            name="caption" 
+                            rows={3} 
+                            placeholder="Share your workout story..."
+                            className="input-outlined w-full resize-none"
+                            value={caption}
+                            onChange={e => setCaption(e.target.value)}
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label htmlFor="hashtags" className="block text-caption mb-2 text-gray-300">Hashtags</label>
+                        <input 
+                            id="hashtags"
+                            name="hashtags"
+                            placeholder="#fitness #fitcraft"
+                            className="input-outlined w-full"
+                            value={hashtags}
+                            onChange={e => setHashtags(e.target.value)}
+                        />
+                    </div>
+                    <div className="pt-2">
+                        <button 
+                            type="submit" 
+                            className="btn-primary w-full flex items-center justify-center gap-2 group"
+                        >
+                            <span>Post to Feed</span>
+                            <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform duration-300">
+                                send
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 const initialPosts = [
     {
         id: 1,
@@ -136,16 +279,92 @@ const recentWorkouts = [
 ];
 
 const FeedScreen: React.FC = () => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [posts, setPosts] = useState(initialPosts);
+    const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+    const [isWorkoutModalOpen, setIsWorkoutModalOpen] = useState(false);
+    
+    // Get current user email from localStorage
+    const currentUserEmail = localStorage.getItem('fitcraftCurrentUser') || '';
+    const currentUserProfileImage = localStorage.getItem(`fitcraftProfileImage_${currentUserEmail}`) || '/WhatsApp Image 2025-11-11 at 01.34.40.jpeg';
+    
+    const currentUser = {
+        name: currentUserEmail ? currentUserEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ') || 'User' : 'Roshan DS',
+        avatar: currentUserProfileImage,
+    };
 
-    const handleLogWorkout = () => {
-        console.log("Workout logged!");
-        setIsModalOpen(false);
+    // Load user's posts from localStorage
+    const loadUserPosts = (email: string): any[] => {
+        if (!email) return [];
+        try {
+            const saved = localStorage.getItem(`fitcraftPosts_${email}`);
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    };
+
+    // Save posts to localStorage
+    const saveUserPosts = (postsToSave: any[], email: string) => {
+        if (!email) return;
+        try {
+            localStorage.setItem(`fitcraftPosts_${email}`, JSON.stringify(postsToSave));
+        } catch (error) {
+            console.error('Failed to save posts:', error);
+        }
+    };
+
+    // Initialize posts: merge initial posts with user's saved posts
+    const [posts, setPosts] = useState(() => {
+        const userPosts = loadUserPosts(currentUserEmail);
+        // Merge user posts with initial posts, avoiding duplicates
+        const allPosts = [...userPosts, ...initialPosts];
+        // Remove duplicates based on id
+        const uniquePosts = Array.from(
+            new Map(allPosts.map(post => [post.id, post])).values()
+        );
+        return uniquePosts;
+    });
+
+    // Reload posts when user changes
+    useEffect(() => {
+        const userPosts = loadUserPosts(currentUserEmail);
+        const allPosts = [...userPosts, ...initialPosts];
+        const uniquePosts = Array.from(
+            new Map(allPosts.map(post => [post.id, post])).values()
+        );
+        setPosts(uniquePosts);
+    }, [currentUserEmail]);
+
+    // Save user-created posts whenever they change
+    useEffect(() => {
+        if (currentUserEmail) {
+            // Save all posts that belong to the current user
+            const userCreatedPosts = posts.filter(post => post.author === currentUser.name);
+            if (userCreatedPosts.length > 0) {
+                saveUserPosts(userCreatedPosts, currentUserEmail);
+            }
+        }
+    }, [posts, currentUserEmail, currentUser.name]);
+
+    const handleCreatePost = (data: { caption: string; hashtags: string[]; image: string }) => {
+        const newPost = {
+            id: Date.now(),
+            author: currentUser.name,
+            avatar: currentUser.avatar,
+            timestamp: 'Just now',
+            content: data.caption,
+            image: data.image,
+            hashtags: data.hashtags,
+            likes: 0,
+            comments: 0,
+            isLiked: false,
+        };
+        const updatedPosts = [newPost, ...posts];
+        setPosts(updatedPosts);
+        setIsPostModalOpen(false);
     };
 
     const handleLikeToggle = (postId: number) => {
-        setPosts(posts.map(post => {
+        const updatedPosts = posts.map(post => {
             if (post.id === postId) {
                 return {
                     ...post,
@@ -154,7 +373,8 @@ const FeedScreen: React.FC = () => {
                 };
             }
             return post;
-        }));
+        });
+        setPosts(updatedPosts);
     };
 
     const handleComment = () => {
@@ -171,7 +391,7 @@ const FeedScreen: React.FC = () => {
                         <p className="text-caption">Stay motivated with your community</p>
                     </div>
                     <button 
-                        onClick={() => setIsModalOpen(true)} 
+                        onClick={() => setIsWorkoutModalOpen(true)} 
                         className="btn-pill bg-gradient-to-r from-orange-500 to-yellow-400 text-white shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 flex items-center gap-2 px-4"
                         aria-label="Log a new workout"
                     >
@@ -199,17 +419,29 @@ const FeedScreen: React.FC = () => {
                                 </div>
                                 <div className="p-6">
                                     <div className="flex items-center mb-4">
-                                        <img 
-                                            alt="User avatar" 
-                                            className="w-14 h-14 rounded-full mr-3 border-3 border-orange-400 shadow-lg" 
-                                            src={post.avatar} 
-                                        />
+                                        <div className="mr-3">
+                                            <div className="relative w-12 h-12">
+                                                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/50 to-yellow-400/50 rounded-full blur-md"></div>
+                                                <img 
+                                                    alt="User avatar" 
+                                                    className="relative w-12 h-12 rounded-full border-2 border-white/30 object-cover object-center shadow-lg" 
+                                                    src={post.avatar} 
+                                                />
+                                            </div>
+                                        </div>
                                         <div>
                                             <p className="font-bold text-white text-base">{post.author}</p>
                                             <p className="text-xs text-gray-300">{post.timestamp}</p>
                                         </div>
                                     </div>
-                                    <p className="text-white mb-5 text-body leading-relaxed">{post.content}</p>
+                                    <p className="text-white mb-3 text-body leading-relaxed whitespace-pre-line">{post.content}</p>
+                                    {post.hashtags?.length ? (
+                                        <div className="flex flex-wrap gap-2 text-sm text-orange-300 font-semibold mb-4">
+                                            {post.hashtags.map(tag => (
+                                                <span key={`${post.id}-${tag}`}>{tag}</span>
+                                            ))}
+                                        </div>
+                                    ) : null}
                                     {post.stats && (
                                         <div className="grid grid-cols-2 gap-3 mb-5">
                                             {post.stats.map(stat => (
@@ -265,17 +497,29 @@ const FeedScreen: React.FC = () => {
                                 style={{ animationDelay: `${index * 0.1}s` }}
                             >
                                 <div className="flex items-center mb-4">
-                                    <img 
-                                        alt="User avatar" 
-                                        className="w-14 h-14 rounded-full mr-3 border-3 border-orange-400 shadow-lg" 
-                                        src={post.avatar} 
-                                    />
+                                    <div className="mr-3">
+                                        <div className="relative w-12 h-12">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/50 to-yellow-400/50 rounded-full blur-md"></div>
+                                            <img 
+                                                alt="User avatar" 
+                                                className="relative w-12 h-12 rounded-full border-2 border-white/30 object-cover object-center shadow-lg" 
+                                                src={post.avatar} 
+                                            />
+                                        </div>
+                                    </div>
                                     <div>
                                         <p className="font-bold text-white text-base">{post.author}</p>
                                         <p className="text-xs text-gray-400">{post.timestamp}</p>
                                     </div>
                                 </div>
-                                <p className="mb-5 text-gray-300 text-body leading-relaxed">{post.content}</p>
+                                <p className="mb-3 text-gray-300 text-body leading-relaxed whitespace-pre-line">{post.content}</p>
+                                {post.hashtags?.length ? (
+                                    <div className="flex flex-wrap gap-2 text-sm text-orange-300 font-semibold mb-4">
+                                        {post.hashtags.map(tag => (
+                                            <span key={`${post.id}-${tag}`}>{tag}</span>
+                                        ))}
+                                    </div>
+                                ) : null}
                                 {post.stats && (
                                     <div className="grid grid-cols-2 gap-3 mb-5">
                                         {post.stats.map(stat => (
@@ -359,7 +603,28 @@ const FeedScreen: React.FC = () => {
                     </div>
                 </div>
             </div>
-            <LogWorkoutModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onLog={handleLogWorkout} />
+            <button
+                onClick={() => setIsPostModalOpen(true)}
+                aria-label="Create new post"
+                className="fixed bottom-28 right-6 z-40 md:right-[calc(50%-180px)] btn-floating w-14 h-14 bg-gradient-to-br from-orange-500 to-yellow-400 shadow-xl shadow-orange-500/40 hover:scale-105 transition-transform"
+            >
+                <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1, 'wght' 600" }}>
+                    add
+                </span>
+            </button>
+            <CreatePostModal 
+                isOpen={isPostModalOpen} 
+                onClose={() => setIsPostModalOpen(false)} 
+                onCreate={handleCreatePost} 
+            />
+            <LogWorkoutModal
+                isOpen={isWorkoutModalOpen}
+                onClose={() => setIsWorkoutModalOpen(false)}
+                onLog={() => {
+                    console.log('Workout logged!');
+                    setIsWorkoutModalOpen(false);
+                }}
+            />
         </>
     );
 };

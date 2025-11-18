@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const CURRENT_USER_KEY = 'fitcraftCurrentUser';
+
 const SignUpScreen: React.FC = () => {
     const navigate = useNavigate();
 
@@ -22,6 +24,9 @@ const SignUpScreen: React.FC = () => {
 
     const handleSignUp = (e: React.MouseEvent) => {
         e.preventDefault();
+        if (formData.email) {
+            localStorage.setItem(CURRENT_USER_KEY, formData.email.toLowerCase());
+        }
         navigate('/app/feed');
     };
 
@@ -55,7 +60,7 @@ const SignUpScreen: React.FC = () => {
                         <div className="input-container">
                             <span className="input-icon material-symbols-outlined">person</span>
                             <input
-                                className="input-floating"
+                                className={`input-floating ${formData.fullName ? 'has-value' : ''}`}
                                 id="fullName"
                                 placeholder=" "
                                 type="text"
@@ -68,7 +73,7 @@ const SignUpScreen: React.FC = () => {
                         <div className="input-container">
                             <span className="input-icon material-symbols-outlined">mail</span>
                             <input
-                                className="input-floating"
+                                className={`input-floating ${formData.email ? 'has-value' : ''}`}
                                 id="email"
                                 placeholder=" "
                                 type="email"
@@ -81,7 +86,7 @@ const SignUpScreen: React.FC = () => {
                         <div className="input-container">
                             <span className="input-icon material-symbols-outlined">lock</span>
                             <input
-                                className="input-floating"
+                                className={`input-floating ${formData.password ? 'has-value' : ''}`}
                                 id="password"
                                 placeholder=" "
                                 type="password"
@@ -94,7 +99,7 @@ const SignUpScreen: React.FC = () => {
                         <div className="input-container">
                             <span className="input-icon material-symbols-outlined">lock_reset</span>
                             <input
-                                className="input-floating"
+                                className={`input-floating ${formData.confirmPassword ? 'has-value' : ''}`}
                                 id="confirmPassword"
                                 placeholder=" "
                                 type="password"
@@ -111,7 +116,7 @@ const SignUpScreen: React.FC = () => {
                                 id="gender"
                                 value={formData.gender}
                                 onChange={handleChange}
-                                className="input-floating appearance-none cursor-pointer pr-10"
+                                className={`input-floating appearance-none cursor-pointer pr-10 ${formData.gender ? 'has-value' : ''}`}
                             >
                                 <option value="" disabled className="bg-input-bg-dark">Select Gender</option>
                                 <option value="Male" className="bg-input-bg-dark">Male</option>
@@ -119,7 +124,7 @@ const SignUpScreen: React.FC = () => {
                                 <option value="Non-binary" className="bg-input-bg-dark">Non-binary</option>
                                 <option value="Prefer not to say" className="bg-input-bg-dark">Prefer not to say</option>
                             </select>
-                            <label htmlFor="gender" className="input-label">Gender</label>
+                            
                             <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                                 expand_more
                             </span>
@@ -131,7 +136,7 @@ const SignUpScreen: React.FC = () => {
                                 <input
                                     className="input-outlined text-center"
                                     id="age"
-                                    placeholder="Age"
+                                    placeholder={formData.age ? "" : "Age"}
                                     type="number"
                                     value={formData.age}
                                     onChange={handleChange}
@@ -141,7 +146,7 @@ const SignUpScreen: React.FC = () => {
                                 <input
                                     className="input-outlined text-center"
                                     id="height"
-                                    placeholder="Height"
+                                    placeholder={formData.height ? "" : "Height"}
                                     type="number"
                                     value={formData.height}
                                     onChange={handleChange}
@@ -151,7 +156,7 @@ const SignUpScreen: React.FC = () => {
                                 <input
                                     className="input-outlined text-center"
                                     id="weight"
-                                    placeholder="Weight"
+                                    placeholder={formData.weight ? "" : "Weight"}
                                     type="number"
                                     value={formData.weight}
                                     onChange={handleChange}

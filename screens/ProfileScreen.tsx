@@ -1,6 +1,49 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const DEFAULT_AVATAR = '/WhatsApp Image 2025-11-11 at 01.34.40.jpeg';
+const CURRENT_USER_KEY = 'fitcraftCurrentUser';
+
+const getProfileStorageKey = (email: string) => `fitcraftProfileImage:${email}`;
 
 const ProfileScreen: React.FC = () => {
+    const [profileImage, setProfileImage] = useState<string>(DEFAULT_AVATAR);
+    const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isFollowing, setIsFollowing] = useState<boolean>(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const email = localStorage.getItem(CURRENT_USER_KEY);
+        setCurrentUserEmail(email);
+        if (email) {
+            const storedImage = localStorage.getItem(getProfileStorageKey(email));
+            if (storedImage) {
+                setProfileImage(storedImage);
+            }
+        }
+    }, []);
+
+    const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+                setProfileImage(reader.result);
+                const emailKey = currentUserEmail ?? localStorage.getItem(CURRENT_USER_KEY);
+                if (emailKey) {
+                    localStorage.setItem(getProfileStorageKey(emailKey), reader.result);
+                }
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const triggerPhotoUpload = () => {
+        fileInputRef.current?.click();
+    };
     const recentWorkouts = [
         { id: 1, type: 'Morning Run', icon: 'directions_run', duration: '30 min', distance: '5.2 km', date: 'Today' },
         { id: 2, type: 'Full Body Strength', icon: 'fitness_center', style: { fontVariationSettings: "'FILL' 1" }, duration: '1.5 hours', date: 'Yesterday' },
@@ -29,13 +72,25 @@ const ProfileScreen: React.FC = () => {
                             <img 
                                 alt="User profile picture" 
                                 className="relative h-32 w-32 rounded-full border-4 border-white/20 object-cover elevation-5" 
-                                src="/WhatsApp Image 2025-11-11 at 01.34.40.jpeg" 
+                                src={profileImage} 
                             />
-                            <div className="absolute -bottom-1 -right-1 flex h-12 w-12 items-center justify-center rounded-full border-4 border-background-dark bg-gradient-to-br from-orange-500 to-yellow-400 elevation-4">
+                            <button
+                                type="button"
+                                onClick={triggerPhotoUpload}
+                                className="absolute -bottom-1 -right-1 flex h-12 w-12 items-center justify-center rounded-full border-4 border-background-dark bg-gradient-to-br from-orange-500 to-yellow-400 elevation-4 hover:scale-105 transition-transform"
+                                aria-label="Upload profile photo"
+                            >
                                 <span className="material-symbols-outlined text-white text-xl" style={{ fontVariationSettings: "'FILL' 1, 'wght' 600" }}>
-                                    star
+                                    add
                                 </span>
-                            </div>
+                            </button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handlePhotoChange}
+                            />
                         </div>
                         <h2 className="text-headline text-white mb-1">Roshan DS</h2>
                         <p className="text-caption mb-6">@Roshan_DS_</p>
@@ -57,11 +112,27 @@ const ProfileScreen: React.FC = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex space-x-3 w-full max-w-sm">
-                            <button className="btn-primary flex-1">
-                                Follow
+                        <div className="flex space-x-3 w-full max-w-sm mb-4">
+                            <button 
+                                className={`flex-1 ${isFollowing ? 'btn-secondary' : 'btn-primary'}`}
+                                onClick={() => setIsFollowing(prev => !prev)}
+                            >
+                                {isFollowing ? 'Following' : 'Follow'}
                             </button>
-                            <button className="btn-secondary flex-1">
+                            <button
+                                className="btn-secondary flex-1"
+                                onClick={() =>
+                                    navigate('/app/chat', {
+                                        state: {
+                                            contact: {
+                                                name: 'Roshan DS',
+                                                image: profileImage,
+                                                status: 'Online • 2 min ago',
+                                            },
+                                        },
+                                    })
+                                }
+                            >
                                 Message
                             </button>
                             <button className="btn-floating w-12 h-12">
